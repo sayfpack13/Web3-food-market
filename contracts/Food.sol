@@ -6,7 +6,7 @@ contract Food {
         uint id;
         string name;
         uint price;
-        address seller;
+        address payable seller;
         address buyer;
         bool isSold;
     }
@@ -21,10 +21,12 @@ contract Food {
         require(bytes(_name).length > 0, "Name cannot be empty");
         require(_price > 0, "Price must be greater than zero");
 
-        foodItemCount++;
-        foodItems[foodItemCount] = FoodItem(foodItemCount, _name, _price, msg.sender, address(0), false);
 
-        emit FoodItemCreated(foodItemCount, _name, _price, msg.sender);
+        foodItems[foodItemCount] = FoodItem(foodItemCount, _name, _price, payable(msg.sender), address(0), false);
+
+        emit FoodItemCreated(foodItemCount, _name, _price, payable(msg.sender));
+
+        foodItemCount++;
     }
 
     function purchaseFoodItem(uint _itemId) public payable {

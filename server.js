@@ -54,7 +54,7 @@ app.get("/deploy-foodContract", async (req, res) => {
 })
 
 
-// http://127.0.0.1:3000/get-food?foodContractAddress=0xC3FdCCf302D225F54779bF42e0e52f2b5317B9C8
+// http://127.0.0.1:3000/get-food?foodContractAddress=0x1F0657BdD1893F8D204aeB0B662dAe8AE8A69D21
 app.get("/get-food", async (req, res) => {
     try {
         const { foodContractAddress } = req.query
@@ -65,15 +65,27 @@ app.get("/get-food", async (req, res) => {
         let foodItems = []
 
 
+
         foodItems = await Promise.all(
             Array.from({ length: foodItemCount }, (_, index) =>
                 contract.methods.foodItems(index).call()
+            
             )
         )
 
+
         let result = ""
         for (let a = 0; a < foodItemCount; a++) {
-            result += foodItems[a].name + ", " + foodItems[a].price + " || "
+            const foodItem=new Food({
+                id: Number(foodItems[a].id),
+                name: foodItems[a].name,
+                price: foodItems[a].price,
+                seller: foodItems[a].seller,
+                buyer: foodItems[a].buyer,
+                isSold: foodItems[a].isSold
+            })
+            
+            result += JSON.stringify(foodItem)
         }
 
         if (result == "") {
@@ -88,7 +100,7 @@ app.get("/get-food", async (req, res) => {
 
 
 
-// http://127.0.0.1:3000/sell-food?sellerAccountAddress=0xBe9BE1A660ab29890eB82B53F71447c2dCE2508F&foodContractAddress=0xC3FdCCf302D225F54779bF42e0e52f2b5317B9C8&name=pizza&price=10
+// http://127.0.0.1:3000/sell-food?sellerAccountAddress=0xBe9BE1A660ab29890eB82B53F71447c2dCE2508F&foodContractAddress=0x1F0657BdD1893F8D204aeB0B662dAe8AE8A69D21&name=pizza&price=10
 app.get('/sell-food', async (req, res) => {
     try {
         const { sellerAccountAddress, foodContractAddress, name, price } = req.query
