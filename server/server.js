@@ -27,10 +27,14 @@ const web3 = new Web3(new Web3.providers.WebsocketProvider("ws://127.0.0.1:7545"
 
 // UTILS
 const sendResponse = (res, data, success = true) => {
-    res.status(success ? 200 : 500).json({
-        data,
-        success
-    })
+    try {
+        res.status(success ? 200 : 500).json({
+            data,
+            success
+        })
+    } catch (error) {
+        // already sent ?
+    }
 }
 
 
@@ -104,7 +108,7 @@ app.get("/get-contractFoodList", async (req, res) => {
                 id: Number(foodItems[a].id),
                 contractAddress: foodItems[a].contractAddress,
                 name: foodItems[a].name,
-                price: foodItems[a].price,
+                price: Number(foodItems[a].price),
                 seller: foodItems[a].seller,
                 buyer: foodItems[a].buyer,
                 isSold: foodItems[a].isSold
@@ -179,7 +183,7 @@ app.get('/sell-food', async (req, res) => {
                 id: Number(id),
                 contractAddress: foodContractAddress,
                 name: name,
-                price: price,
+                price: Number(price),
                 seller: sellerAccountAddress,
                 buyer: "",
                 isSold: false
