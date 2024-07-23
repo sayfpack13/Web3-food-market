@@ -15,9 +15,11 @@ db.on("open", () => {
 })
 
 
-// configs
+// VARS
+// constant smart contracts
 const foodContractConfig = require('./build/contracts/Food.json');
-const web3 = new Web3(new Web3.providers.HttpProvider("HTTP://127.0.0.1:7545"));
+// replace URL with ETH node URL or any blockchain network
+const web3 = new Web3(new Web3.providers.WebsocketProvider("ws://127.0.0.1:7545"));
 
 
 
@@ -94,14 +96,16 @@ app.get('/sell-food', async (req, res) => {
 
         const contract = new web3.eth.Contract(foodContractConfig.abi, foodContractAddress)
 
-        contract.events.FoodItemCreated().on("changed", async (event) => {
-            console.log(event.address);
 
+
+
+        contract.events.FoodItemCreated().once("data", async (event) => {
             const { id } = event.returnValues
 
+  
 
             const foodDoc = await Food.create({
-                id: id,
+                id: Number(id),
                 name: name,
                 price: price,
                 seller: sellerAccountAddress,
@@ -110,8 +114,8 @@ app.get('/sell-food', async (req, res) => {
             })
 
 
+     
             res.json({ message: 'Food created by : ' + sellerAccountAddress + " || Contract Address: " + foodContractAddress + " || Food document ID: " + foodDoc._id });
-
         })
 
 
