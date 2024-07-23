@@ -15,12 +15,23 @@ db.on("open", () => {
 })
 
 
+
+
 // VARS
 // constant smart contracts
 const foodContractConfig = require('./build/contracts/Food.json');
 // replace URL with ETH node URL or any blockchain network
 const web3 = new Web3(new Web3.providers.WebsocketProvider("ws://127.0.0.1:7545"));
 
+
+
+// UTILS
+const sendResponse = (res, data, success = true) => {
+    res.status(success ? 200 : 500).json({
+        data,
+        success
+    })
+}
 
 
 async function deployContract(deployerAccountAddress, contractConfig) {
@@ -48,27 +59,33 @@ async function deployContract(deployerAccountAddress, contractConfig) {
 }
 
 
-// http://127.0.0.1:3000/deploy-foodContract?deployerAccountAddress=0x3c5a7D252357DAE761A6f99c55fDB2e6557e30e9
+// http://127.0.0.1:3000/deploy-foodContract?deployerAccountAddress=0x91DB4521B30bb21d1E3253B4903721fC35A1D697
 app.get("/deploy-foodContract", async (req, res) => {
     try {
         const { deployerAccountAddress } = req.query
 
 
         const foodContractAddress = await deployContract(deployerAccountAddress, foodContractConfig)
-        res.json({ message: "Deployed Contract Address: " + foodContractAddress })
+        sendResponse(res, foodContractAddress)
     } catch (err) {
-        res.json({ message: err })
+        sendResponse(res, "Error deploying food contract", false)
     }
 })
 
 
-// http://127.0.0.1:3000/get-contractFoodList?foodContractAddress=0xF7481A31DB62dB71711B8b1f9e405860e1Bc1E1E
+// http://127.0.0.1:3000/get-contractFoodList?foodContractAddress=0xe6511714692e88A056AcD3fc68c42067362187B8
 app.get("/get-contractFoodList", async (req, res) => {
+    const { foodContractAddress } = req.query
+    let contract
+
     try {
-        const { foodContractAddress } = req.query
+        contract = new web3.eth.Contract(foodContractConfig.abi, foodContractAddress)
+    } catch (error) {
+        sendResponse(res, "Error fetching food contract", false)
+    }
 
-        const contract = new web3.eth.Contract(foodContractConfig.abi, foodContractAddress)
 
+    try {
         const foodItemCount = Number(await contract.methods.foodItemCount().call())
         let foodItems = []
 
@@ -81,11 +98,11 @@ app.get("/get-contractFoodList", async (req, res) => {
             )
         )
 
-        let result = ""
+        let result = []
         for (let a = 0; a < foodItemCount; a++) {
             const foodItem = new Food({
                 id: Number(foodItems[a].id),
-                contractAddress:foodItems[a].contractAddress,
+                contractAddress: foodItems[a].contractAddress,
                 name: foodItems[a].name,
                 price: foodItems[a].price,
                 seller: foodItems[a].seller,
@@ -94,48 +111,66 @@ app.get("/get-contractFoodList", async (req, res) => {
             })
             foodItem._id = null
 
-            result += JSON.stringify(foodItem)
+            result.push(foodItem)
         }
 
-        if (result == "") {
-            result = "Empty List"
-        }
 
-        res.json({ message: result })
-    } catch (err) {
-        res.json({ message: err })
+        sendResponse(res,result)
+    } catch (error) {
+        sendResponse(res, "Error fetching food from Smart contract",false)
     }
+
+
 })
 
 
 // http://127.0.0.1:3000/get-dbFoodList
 app.get("/get-dbFoodList", async (req, res) => {
-    const foodItems = await Food.find()
+    try {
+        const foodItems = await Food.find()
 
-    res.json({ message: foodItems })
+        sendResponse(res, foodItems)
+    } catch (error) {
+        sendResponse(res, "Error fetching food DB list", false)
+    }
+})
+
+
+
+// http://127.0.0.1:3000/get-foodContractList
+app.get("/get-foodContractList", async (req, res) => {
+    try {
+        const contractList = await Contract.find()
+
+        sendResponse(res, contractList)
+    } catch (error) {
+        sendResponse(res, "Error fetching food contract list", false)
+    }
 })
 
 
 
 
-
-// http://127.0.0.1:3000/sell-food?sellerAccountAddress=0x3c5a7D252357DAE761A6f99c55fDB2e6557e30e9&foodContractAddress=0xF7481A31DB62dB71711B8b1f9e405860e1Bc1E1E&name=pizza&price=10
+// http://127.0.0.1:3000/sell-food?sellerAccountAddress=0x91DB4521B30bb21d1E3253B4903721fC35A1D697&foodContractAddress=0xe6511714692e88A056AcD3fc68c42067362187B8&name=pizza&price=10
 app.get('/sell-food', async (req, res) => {
+    const { sellerAccountAddress, foodContractAddress, name, price } = req.query
+    let contract
+
     try {
-        const { sellerAccountAddress, foodContractAddress, name, price } = req.query
+        contract = new web3.eth.Contract(foodContractConfig.abi, foodContractAddress)
+    } catch (error) {
+        sendResponse(res, "Error fetching food contract", false)
+    }
 
 
-        const contract = new web3.eth.Contract(foodContractConfig.abi, foodContractAddress)
-
-
+    try {
         contract.events.FoodItemCreated().once("data", async (event) => {
             const { id } = event.returnValues
 
 
-
             const foodDoc = await Food.create({
                 id: Number(id),
-                contractAddress:foodContractAddress,
+                contractAddress: foodContractAddress,
                 name: name,
                 price: price,
                 seller: sellerAccountAddress,
@@ -144,16 +179,15 @@ app.get('/sell-food', async (req, res) => {
             })
 
 
-
-            res.json({ message: 'Food created by : ' + sellerAccountAddress + " || Contract Address: " + foodContractAddress + " || Food document ID: " + foodDoc._id });
+            sendResponse(res, {
+                foodDoc
+            })
         })
 
 
 
-
-        await contract.methods.createFoodItem(foodContractAddress,name, price).send({ from: sellerAccountAddress, gas: 1000000 })
-    } catch (err) {
-        console.log(err);
-        res.json({ message: err })
+        await contract.methods.createFoodItem(foodContractAddress, name, price).send({ from: sellerAccountAddress, gas: 1000000 })
+    } catch (error) {
+        sendResponse(res, "Error saving food to DB/Smart Contract", false)
     }
 });
