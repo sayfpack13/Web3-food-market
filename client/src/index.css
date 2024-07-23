@@ -5,6 +5,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #f4f8ff;
 }
 
 code {
@@ -24,4 +25,75 @@ code {
   display: flex !important;
   justify-content: end;
   box-shadow: none !important;
+}
+
+
+
+.food-market-container {
+  justify-content: center;
+  margin-top: 5%;
+}
+
+
+.food-card {
+  border: 2px solid #3070cd;
+  border-radius: 10px !important;
+  background-color: #e2edff !important;
+}
+
+.food-card .content{
+  padding: 5px;
+}
+
+.food-card .image {
+  height: 250px;
+  width: 300px;
+  border-bottom: 2px solid #1565c0;
+}
+
+.food-card .name {
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+}
+
+
+.food-card .info {
+  width: 100%;
+  font-weight: bold;
+  padding: 5px;
+}
+
+.food-card .purchase {
+  color: #fff;
+  background-color: #3070cd;
+}
+
+.food-card .purchase:hover {
+  background-color: #1565c0;
+}
+
+.food-card .purchase svg {
+  font-size: 20px;
+}
+
+
+
+.form-label {
+  display: flex;
+  align-items: center;
+
+}
+
+.form-label label {
+  font-weight: bold;
+  font-size: 17px;
+  margin-right: 5px;
+}
+
+.form-label div {
+  font-size: 15px;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

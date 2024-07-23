@@ -115,9 +115,9 @@ app.get("/get-contractFoodList", async (req, res) => {
         }
 
 
-        sendResponse(res,result)
+        sendResponse(res, result)
     } catch (error) {
-        sendResponse(res, "Error fetching food from Smart contract",false)
+        sendResponse(res, "Error fetching food from Smart contract", false)
     }
 
 
@@ -127,7 +127,14 @@ app.get("/get-contractFoodList", async (req, res) => {
 // http://127.0.0.1:3000/get-dbFoodList
 app.get("/get-dbFoodList", async (req, res) => {
     try {
-        const foodItems = await Food.find()
+        const { isSold } = req.query
+        let foodItems
+
+        if (isSold !== undefined) {
+            foodItems = await Food.find({ isSold: isSold })
+        } else {
+            foodItems = await Food.find()
+        }
 
         sendResponse(res, foodItems)
     } catch (error) {
