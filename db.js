@@ -9,15 +9,23 @@ const db = mongoose.connection.on("open", () => {
 
 
 
-const foodSchema=new mongoose.Schema({
-    id:Number,
-    name:String,
-    price:Number,
-    seller:String,
-    buyer:String,
-    isSold:Boolean
+const foodSchema = new mongoose.Schema({
+    id: Number,
+    contractAddress:String,
+    name: String,
+    price: Number,
+    seller: String,
+    buyer: String,
+    isSold: Boolean
 })
 
-const Food=mongoose.model("Food",foodSchema)
 
-module.exports = { mongoose, db,Food }
+const contractSchema = new mongoose.Schema({
+    address: String,
+    created_at: Date
+})
+
+const Food = mongoose.model("Food", foodSchema)
+const Contract = mongoose.model("Contract", contractSchema)
+
+module.exports = { mongoose, db, Food, Contract }

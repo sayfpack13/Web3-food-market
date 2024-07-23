@@ -1,7 +1,7 @@
 const express = require("express")
 const { Web3 } = require("web3");
 const cors = require("cors")
-const { db, Food } = require("./db")
+const { db, Food, Contract } = require("./db")
 const app = express()
 
 
@@ -28,19 +28,27 @@ async function deployContract(deployerAccountAddress, contractConfig) {
 
     const deploymentTx = await contract.deploy({
         data: contractConfig.bytecode
+    }).send({
+        from: deployerAccountAddress,
+        gas: 1000000,
+        gasPrice: web3.utils.toWei('5', 'gwei')
     })
-        .send({
-            from: deployerAccountAddress,
-            gas: 1000000,
-            gasPrice: web3.utils.toWei('5', 'gwei')
-        });
+
+    const contractAddress = deploymentTx.options.address
+
+    await Contract.create({
+        address: contractAddress,
+        created_at: new Date()
+    })
 
 
-    return deploymentTx.options.address;
+
+
+    return contractAddress
 }
 
 
-// http://127.0.0.1:3000/deploy-foodContract?deployerAccountAddress=0xBe9BE1A660ab29890eB82B53F71447c2dCE2508F
+// http://127.0.0.1:3000/deploy-foodContract?deployerAccountAddress=0x3c5a7D252357DAE761A6f99c55fDB2e6557e30e9
 app.get("/deploy-foodContract", async (req, res) => {
     try {
         const { deployerAccountAddress } = req.query
@@ -54,7 +62,7 @@ app.get("/deploy-foodContract", async (req, res) => {
 })
 
 
-// http://127.0.0.1:3000/get-contractFoodList?foodContractAddress=0x1F0657BdD1893F8D204aeB0B662dAe8AE8A69D21
+// http://127.0.0.1:3000/get-contractFoodList?foodContractAddress=0xF7481A31DB62dB71711B8b1f9e405860e1Bc1E1E
 app.get("/get-contractFoodList", async (req, res) => {
     try {
         const { foodContractAddress } = req.query
@@ -77,12 +85,14 @@ app.get("/get-contractFoodList", async (req, res) => {
         for (let a = 0; a < foodItemCount; a++) {
             const foodItem = new Food({
                 id: Number(foodItems[a].id),
+                contractAddress:foodItems[a].contractAddress,
                 name: foodItems[a].name,
                 price: foodItems[a].price,
                 seller: foodItems[a].seller,
                 buyer: foodItems[a].buyer,
                 isSold: foodItems[a].isSold
             })
+            foodItem._id = null
 
             result += JSON.stringify(foodItem)
         }
@@ -102,20 +112,20 @@ app.get("/get-contractFoodList", async (req, res) => {
 app.get("/get-dbFoodList", async (req, res) => {
     const foodItems = await Food.find()
 
-    res.json({message:foodItems})
+    res.json({ message: foodItems })
 })
 
 
 
-// http://127.0.0.1:3000/sell-food?sellerAccountAddress=0xBe9BE1A660ab29890eB82B53F71447c2dCE2508F&foodContractAddress=0x1F0657BdD1893F8D204aeB0B662dAe8AE8A69D21&name=pizza&price=10
+
+
+// http://127.0.0.1:3000/sell-food?sellerAccountAddress=0x3c5a7D252357DAE761A6f99c55fDB2e6557e30e9&foodContractAddress=0xF7481A31DB62dB71711B8b1f9e405860e1Bc1E1E&name=pizza&price=10
 app.get('/sell-food', async (req, res) => {
     try {
         const { sellerAccountAddress, foodContractAddress, name, price } = req.query
 
 
         const contract = new web3.eth.Contract(foodContractConfig.abi, foodContractAddress)
-
-
 
 
         contract.events.FoodItemCreated().once("data", async (event) => {
@@ -125,6 +135,7 @@ app.get('/sell-food', async (req, res) => {
 
             const foodDoc = await Food.create({
                 id: Number(id),
+                contractAddress:foodContractAddress,
                 name: name,
                 price: price,
                 seller: sellerAccountAddress,
@@ -140,8 +151,7 @@ app.get('/sell-food', async (req, res) => {
 
 
 
-        const createTx = await contract.methods.createFoodItem(name, price)
-            .send({ from: sellerAccountAddress, gas: 1000000 })
+        await contract.methods.createFoodItem(foodContractAddress,name, price).send({ from: sellerAccountAddress, gas: 1000000 })
     } catch (err) {
         console.log(err);
         res.json({ message: err })

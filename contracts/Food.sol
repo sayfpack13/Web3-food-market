@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 contract Food {
     struct FoodItem {
         uint id;
+        string contractAddress;
         string name;
         uint price;
         address payable seller;
@@ -14,17 +15,17 @@ contract Food {
     mapping(uint => FoodItem) public foodItems;
     uint public foodItemCount;
 
-    event FoodItemCreated(uint id, string name, uint price, address seller);
+    event FoodItemCreated(uint id,string contractAddress, string name, uint price, address seller);
     event FoodItemPurchased(uint id, address buyer);
 
-    function createFoodItem(string memory _name, uint _price) public {
+    function createFoodItem(string memory _contractAddress,string memory _name, uint _price) public {
         require(bytes(_name).length > 0, "Name cannot be empty");
         require(_price > 0, "Price must be greater than zero");
 
 
-        foodItems[foodItemCount] = FoodItem(foodItemCount, _name, _price, payable(msg.sender), address(0), false);
+        foodItems[foodItemCount] = FoodItem(foodItemCount,_contractAddress, _name, _price, payable(msg.sender), address(0), false);
 
-        emit FoodItemCreated(foodItemCount, _name, _price, payable(msg.sender));
+        emit FoodItemCreated(foodItemCount,_contractAddress, _name, _price, payable(msg.sender));
 
         foodItemCount++;
     }
