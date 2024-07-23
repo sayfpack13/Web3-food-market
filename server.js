@@ -54,8 +54,8 @@ app.get("/deploy-foodContract", async (req, res) => {
 })
 
 
-// http://127.0.0.1:3000/get-food?foodContractAddress=0x1F0657BdD1893F8D204aeB0B662dAe8AE8A69D21
-app.get("/get-food", async (req, res) => {
+// http://127.0.0.1:3000/get-contractFoodList?foodContractAddress=0x1F0657BdD1893F8D204aeB0B662dAe8AE8A69D21
+app.get("/get-contractFoodList", async (req, res) => {
     try {
         const { foodContractAddress } = req.query
 
@@ -65,18 +65,17 @@ app.get("/get-food", async (req, res) => {
         let foodItems = []
 
 
-
+        // smart contract food list
         foodItems = await Promise.all(
             Array.from({ length: foodItemCount }, (_, index) =>
                 contract.methods.foodItems(index).call()
-            
+
             )
         )
 
-
         let result = ""
         for (let a = 0; a < foodItemCount; a++) {
-            const foodItem=new Food({
+            const foodItem = new Food({
                 id: Number(foodItems[a].id),
                 name: foodItems[a].name,
                 price: foodItems[a].price,
@@ -84,7 +83,7 @@ app.get("/get-food", async (req, res) => {
                 buyer: foodItems[a].buyer,
                 isSold: foodItems[a].isSold
             })
-            
+
             result += JSON.stringify(foodItem)
         }
 
@@ -96,6 +95,14 @@ app.get("/get-food", async (req, res) => {
     } catch (err) {
         res.json({ message: err })
     }
+})
+
+
+// http://127.0.0.1:3000/get-dbFoodList
+app.get("/get-dbFoodList", async (req, res) => {
+    const foodItems = await Food.find()
+
+    res.json({message:foodItems})
 })
 
 
@@ -114,7 +121,7 @@ app.get('/sell-food', async (req, res) => {
         contract.events.FoodItemCreated().once("data", async (event) => {
             const { id } = event.returnValues
 
-  
+
 
             const foodDoc = await Food.create({
                 id: Number(id),
@@ -126,7 +133,7 @@ app.get('/sell-food', async (req, res) => {
             })
 
 
-     
+
             res.json({ message: 'Food created by : ' + sellerAccountAddress + " || Contract Address: " + foodContractAddress + " || Food document ID: " + foodDoc._id });
         })
 
