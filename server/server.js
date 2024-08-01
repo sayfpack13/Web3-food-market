@@ -20,6 +20,7 @@ db.on("open", () => {
 // VARS
 // constant smart contracts
 const foodContractConfig = require('./build/contracts/Food.json');
+const foodNFTContractConfig = require('./build/contracts/FoodNFT.json');
 // replace URL with ETH node URL or any blockchain network
 const web3 = new Web3(new Web3.providers.WebsocketProvider("ws://127.0.0.1:7545"));
 
@@ -43,11 +44,7 @@ async function deployContract(deployerAccountAddress, contractConfig) {
 
     const deploymentTx = await contract.deploy({
         data: contractConfig.bytecode
-    }).send({
-        from: deployerAccountAddress,
-        gas: 1000000,
-        gasPrice: web3.utils.toWei('5', 'gwei')
-    })
+    }).send({ from: deployerAccountAddress })
 
     const contractAddress = deploymentTx.options.address
 
@@ -202,3 +199,36 @@ app.get('/sell-food', async (req, res) => {
         sendResponse(res, "Error saving food to DB/Smart Contract", false)
     }
 });
+
+
+// METHOD 1: Food NFT contract config must be sent to frontend, user pay and deploy contract using metamask and must return contract transaction to save NFT and list it in DB
+app.get("/get-foodNFTConfig", (req, res) => {
+    sendResponse(res, foodNFTContractConfig)
+})
+// save deployed contract from frontend
+app.get("/save-foodNFT", async (req, res) => {
+    try {
+        const { contractAddress } = req.query
+
+
+        // TODO: check contract is valid and call it's functions to make sure it's food NFT from our compiled contracts
+
+        await Contract.create({
+            address: contractAddress,
+            created_at: new Date()
+        })
+
+
+        sendResponse(res, contractAddress)
+    } catch (error) {
+        sendResponse(res, "Warning can't find contract", false)
+    }
+})
+
+
+
+
+// METHOD 2: Food NFT contract is paid and deployed from backend including transaction fee, this is helpful only to give users free NFT listing service
+app.get("/publish-foodNFT", async (req, res) => {
+
+})

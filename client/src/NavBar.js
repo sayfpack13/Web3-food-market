@@ -24,6 +24,10 @@ export default function NavBar() {
                     setisLoading(true)
                     navigate("/FoodMarket")
                 }} loading={isLoading && location.pathname == "/FoodMarket"} loadingPosition="start" startIcon={<LocalGroceryStoreIcon />}>Food market</LoadingButton>
+                <LoadingButton onClick={() => {
+                    setisLoading(true)
+                    navigate("/FoodSell")
+                }} loading={isLoading && location.pathname == "/FoodSell"} loadingPosition="start" startIcon={<LocalGroceryStoreIcon />}>Sell Food</LoadingButton>
             </ButtonGroup>
         </div >
     )
