@@ -6,9 +6,7 @@ export default function Home() {
   const { isLoading, setisLoading } = useContext(LoadingContext)
 
   useEffect(() => {
-    setTimeout(()=>{
-      setisLoading(false)
-    },500)
+    setisLoading(false)
   },[isLoading])
 
   

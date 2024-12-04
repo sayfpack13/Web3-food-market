@@ -8,10 +8,21 @@ const db = mongoose.connection.on("open", () => {
 })
 
 
+const UserSchema = new mongoose.Schema({
+    email: { type: String, unique: true, required: true },
+    username: { type: String, unique: true, required: true },
+    password: { type: String, required: true },
+    first_name: { type: String, default: "Farmer" },
+    last_name: { type: String, default: "" },
+    avatar: { type: String, default: null },
+    country: { type: String, default: "" }
+})
+
+const User = mongoose.model("User", UserSchema)
+
 
 const foodSchema = new mongoose.Schema({
     id: Number,
-    contractAddress:String,
     name: String,
     price: Number,
     seller: String,
@@ -20,12 +31,8 @@ const foodSchema = new mongoose.Schema({
 })
 
 
-const contractSchema = new mongoose.Schema({
-    address: String,
-    created_at: Date
-})
 
 const Food = mongoose.model("Food", foodSchema)
-const Contract = mongoose.model("Contract", contractSchema)
 
-module.exports = { mongoose, db, Food, Contract }
+
+module.exports = { mongoose, db, Food, User }

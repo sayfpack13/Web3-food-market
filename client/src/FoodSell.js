@@ -1,7 +1,9 @@
 import detectEthereumProvider from "@metamask/detect-provider"
-import { Button } from "@mui/material"
-import { useEffect, useState } from "react"
+import { Button, TextField } from "@mui/material"
+import { useContext, useEffect, useState } from "react"
 import Web3 from "web3"
+import { LoadingContext } from "."
+import { getUsdToEthRate } from "./utils"
 
 
 
@@ -9,6 +11,13 @@ export default function FoodSell() {
     const [availableAccounts, setavailableAccounts] = useState([])
     const [account, setaccount] = useState()
     const [web3, setweb3] = useState(new Web3())
+    const { isLoading, setisLoading } = useContext(LoadingContext)
+
+    const [name, setname] = useState("")
+    const [price, setprice] = useState(0)
+
+    const [usdToEthRate, setusdToEthRate] = useState(1)
+
 
     useEffect(() => {
         init()
@@ -22,6 +31,11 @@ export default function FoodSell() {
 
             setweb3(web3)
         }
+
+        setusdToEthRate(await getUsdToEthRate())
+
+
+        setisLoading(false)
     }
 
 
@@ -38,45 +52,37 @@ export default function FoodSell() {
         setaccount(null)
     }
 
-    function stringToHex(str) {
-        // Create a Uint8Array from the UTF-8 encoded string
-        const encoder = new TextEncoder();
-        const uint8Array = encoder.encode(str);
-
-        // Convert the Uint8Array to a hex string
-        return Array.from(uint8Array)
-            .map(byte => byte.toString(16).padStart(2, '0'))
-            .join('');
-    }
 
 
-    // METHOD 1: user must pay contract transaction of NFT
     const publishFoodNFT = async () => {
-        const response = await (await fetch(process.env.REACT_APP_BACKEND_URL + "/get-foodNFTConfig", {
-            method: "get"
-        })).json()
-        const foodNFTConfig = response.data
+        try {
 
+            await fetch(process.env.REACT_APP_BACKEND_URL + "/sell-food?sellerAccountAddress=" + account + "&name=" + name + "&price=" + price)
 
-        const contract = new web3.eth.Contract(foodNFTConfig.abi)
-        const contractTx = await contract.deploy({ data: foodNFTConfig.bytecode }).send({ from: account })
+        } catch (err) {
 
-        // TODO fill contract food details
-        // TODO save food details in backend DB
-
-        await fetch(process.env.REACT_APP_BACKEND_URL + "/save-foodNFT?contractAddress=" + contractTx.options.address)
+        }
     }
 
-    // METHOD 2: backend must pay and deploy contract of Food NFT (Free NFT listing service)
-    const publishFoodNFT2 = () => {
-        // TODO send NFT publish request and save food details in backend DB
-    }
+
 
 
     if (account) {
         return (
             <>
                 <div>Connected to: {account}</div>
+                <TextField
+                    value={name}
+                    onChange={(e) => setname(e.target.value)}
+                    label="Recipe Name"
+                    type="text"
+                />
+                <TextField
+                    value={price}
+                    onChange={(e) => setprice(e.target.value)}
+                    label="Recipe Price"
+                    type="number"
+                />
                 <Button onClick={publishFoodNFT}>Publish Food</Button>
                 <Button onClick={disconnectWallet}>Disconnect Wallet</Button>
             </>
